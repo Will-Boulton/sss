@@ -1,15 +1,54 @@
-use crate::source::{SourceLocation, SourceRange};
+use crate::source::{SourceLocation, SourcePoint, SourceRange, ToLocation};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Token {
-    Illegal(SourceLocation),
-    Identifier(SourceRange, String),
-    IntegerLiteral(SourceRange, String),
-    SemiColon(SourceLocation),
-    Colon(SourceLocation),
-    Comma(SourceLocation),
-    OpenBrace(SourceLocation),
-    CloseBrace(SourceLocation),
-    OpenBracket(SourceLocation),
-    CloseBracket(SourceLocation),
+pub enum TokenType {
+    Illegal,
+    Identifier(String),
+    IntegerLiteral(String),
+    SemiColon,
+    Colon,
+    Comma,
+    OpenBrace,
+    CloseBrace,
+    OpenBracket,
+    CloseBracket,
+}
+
+pub struct Token {
+    token: TokenType,
+    location: SourceLocation,
+}
+
+#[macro_export]
+macro_rules! token {
+    ($tt:ident, $loc:expr) => {
+        Token::new(TokenType::$tt, $loc)
+    };
+    ($tt:ident, $loc:expr $(,$args:expr)+) => {
+        Token::new(TokenType::$tt($($args),+), $loc)
+    };
+}
+
+impl Token {
+
+    pub fn get(&self) -> &TokenType {
+        return &self.token;
+    }
+
+    pub fn from_point(token: TokenType, source_point: SourcePoint) -> Self {
+        return Token {
+            token,
+            location: SourceLocation::Point(source_point),
+        };
+    }
+    pub fn from_range(token: TokenType, source_range: SourceRange) -> Self {
+        return Token {
+            token,
+            location: SourceLocation::Range(source_range),
+        };
+    }
+
+    pub fn new(token: TokenType, location: SourceLocation) -> Self {
+        return Token { token, location };
+    }
 }

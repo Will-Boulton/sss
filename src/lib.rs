@@ -4,7 +4,6 @@ pub mod lexer;
 pub mod parser;
 pub mod source;
 
-
 fn main() {
     println!("Hello, world!");
     let my_struct = StructDeclaration {

@@ -1,33 +1,58 @@
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub enum SourceLocation {
+    Point(SourcePoint),
+    Range(SourceRange),
+}
+
+pub trait ToLocation {
+    fn to_location(self) -> SourceLocation;
+}
+
+
+
 #[derive(PartialEq, Clone, Copy, Debug, Eq)]
-pub struct SourceLocation {
+pub struct SourcePoint {
     pub line: usize,
     pub col: usize,
 }
 
-impl SourceLocation {
-    pub(crate) fn zero() -> SourceLocation {
-        SourceLocation { line: 0, col: 0 }
+impl ToLocation for SourcePoint {
+    fn to_location(self) -> SourceLocation {
+        SourceLocation::Point(self)
+    }
+}
+
+impl ToLocation for SourceRange {
+    fn to_location(self) -> SourceLocation {
+        SourceLocation::Range(self)
+    }
+}
+
+
+impl SourcePoint {
+    pub(crate) fn zero() -> SourcePoint {
+        SourcePoint { line: 0, col: 0 }
     }
 
-    pub fn new(line: usize, col: usize) -> SourceLocation {
-        SourceLocation { line, col }
+    pub fn new(line: usize, col: usize) -> SourcePoint {
+        SourcePoint { line, col }
     }
 
-    pub(crate) fn next_pos(&self) -> SourceLocation {
-        SourceLocation {
+    pub(crate) fn next_pos(&self) -> SourcePoint {
+        SourcePoint {
             line: self.line,
             col: self.col + 1,
         }
     }
 
-    pub(crate) fn next_line(&self) -> SourceLocation {
-        SourceLocation {
+    pub(crate) fn next_line(&self) -> SourcePoint {
+        SourcePoint {
             line: self.line + 1,
             col: 0,
         }
     }
 
-    pub(crate) fn range_to(&self, to: SourceLocation) -> SourceRange {
+    pub(crate) fn range_to(&self, to: SourcePoint) -> SourceRange {
         SourceRange {
             from: self.clone(),
             to: to.clone(),
@@ -35,17 +60,31 @@ impl SourceLocation {
     }
 }
 
-#[derive(PartialEq,Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct SourceRange {
-    pub from: SourceLocation,
-    pub to: SourceLocation,
+    pub from: SourcePoint,
+    pub to: SourcePoint,
 }
 
 impl SourceRange {
-    pub fn new(from: [usize; 2], to: [usize; 2]) -> Self {
-        SourceRange {
-            from: SourceLocation::new(from[0], from[1]),
-            to: SourceLocation::new(to[0], to[1]),
-        }
+    fn new(from: SourcePoint, to: SourcePoint) -> SourceRange {
+        SourceRange { from, to }
     }
 }
+
+#[macro_export]
+macro_rules! location {
+    ($l:literal, $c:literal) => {
+        SourceLocation::Point(SourcePoint::new($l, $c))
+    };
+    ($l:expr => $l2:expr) => {
+        SourceLocation::Range($l.range_to($l2))
+    };
+    ($l:literal, $c:literal -> $l2:literal, $c2:literal) => {
+        SourceLocation::Range(SourceRange::new(
+            SourcePoint::new($l, $c),
+            SourcePoint::new($l2, $c2),
+        ))
+    };
+}
+

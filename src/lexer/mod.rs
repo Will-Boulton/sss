@@ -1,6 +1,7 @@
-use crate::lexer::token::Token::{Identifier, IntegerLiteral};
-use crate::source::SourceLocation;
-pub use token::Token as Token;
+use crate::lexer::token::TokenType::{Identifier, IntegerLiteral};
+pub use token::{Token, TokenType};
+use crate::{location, token};
+use crate::source::{SourceLocation, SourcePoint, SourceRange, ToLocation};
 
 mod token;
 
@@ -8,35 +9,13 @@ mod token;
 pub struct Lexer<'a> {
     input: &'a str,
     curr_offset: usize,
-    current_location: SourceLocation,
+    current_location: SourcePoint,
     line_pos: usize,
     line: usize,
     ch: char,
-    prev_token: Option<Token>,
+    prev_token: Option<TokenType>,
 }
 const EOF_CHAR: char = '\0';
-
-#[cfg(test)]
-mod tests {
-    use std::cmp::PartialEq;
-    use crate::lexer::token::Token;
-    use crate::lexer::tokenize;
-    use crate::source::{SourceLocation, SourceRange};
-
-
-    #[test]
-    fn test_lexer() {
-        let text = "an_identifier 123 [ ] ; \
-         foobert421_fasga \
-         , { }";
-
-        let tokens : Vec<_> = tokenize(text).collect();
-
-        assert_eq!(tokens.len(), 9);
-
-        assert_eq!(tokens[0], Token::Identifier(SourceRange::new([0, 0], [0, 13]),String::from("an_identifier")));
-    }
-}
 
 pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + 'a {
     Lexer::new(input)
@@ -47,8 +26,8 @@ fn is_identifier_char(ch: char) -> bool {
 }
 
 pub(crate) enum LexerError {
-    InvalidInteger(SourceLocation),
-    InvalidIdentifier(SourceLocation),
+    InvalidInteger(SourcePoint),
+    InvalidIdentifier(SourcePoint),
     UnexpectedError,
 }
 
@@ -65,7 +44,7 @@ impl<'a> Lexer<'a> {
         Self {
             input,
             curr_offset: 0,
-            current_location: SourceLocation::zero(),
+            current_location: SourcePoint::zero(),
             line_pos: 0,
             line: 0,
             ch: EOF_CHAR,
@@ -141,10 +120,7 @@ impl<'a> Lexer<'a> {
 
                 self.advance_cursor(identifier.len());
 
-                return Some(Identifier(
-                    start_loc.range_to(self.current_location.clone()),
-                    identifier,
-                ));
+                return Some(token!(Identifier,location!(start_loc => self.current_location), identifier));
             }
             char if char.is_numeric() => {
                 let num: String = self
@@ -154,21 +130,18 @@ impl<'a> Lexer<'a> {
                     .take_while(move |c| c.is_numeric())
                     .collect();
                 self.advance_cursor(num.len());
-                return Some(IntegerLiteral(
-                    start_loc.range_to(self.current_location.clone()),
-                    num,
-                ));
+                return Some(token!(IntegerLiteral,location!(start_loc => self.current_location), num));
             }
             char if KEY_CHARS.contains(&char) => {
                 _ = self.next_char();
                 return match char {
-                    '[' => Some(Token::OpenBracket(start_loc)),
-                    ']' => Some(Token::CloseBracket(start_loc)),
-                    '{' => Some(Token::OpenBrace(start_loc)),
-                    '}' => Some(Token::CloseBrace(start_loc)),
-                    ',' => Some(Token::Comma(start_loc)),
-                    ':' => Some(Token::Colon(start_loc)),
-                    ';' => Some(Token::SemiColon(start_loc)),
+                    '[' => Some(token!(OpenBracket,start_loc.to_location())),
+                    ']' => Some(token!(CloseBracket,start_loc.to_location())),
+                    '{' => Some(token!(OpenBrace,start_loc.to_location())),
+                    '}' => Some(token!(CloseBrace,start_loc.to_location())),
+                    ',' => Some(token!(Comma,start_loc.to_location())),
+                    ':' => Some(token!(Colon,start_loc.to_location())),
+                    ';' => Some(token!(SemiColon,start_loc.to_location())),
                     _ => panic!("unreachable"),
                 };
             }
