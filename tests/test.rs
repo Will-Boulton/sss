@@ -1,6 +1,4 @@
-
-use sss::source::SourceRange;
-
+use sss::lexer::Keyword;
 use sss::lexer::TokenType;
 use sss::lexer::*;
 
@@ -68,7 +66,7 @@ macro_rules! token {
         TokenType::Comma
     };
     (;) => {
-       TokenType::SemiColon
+        TokenType::SemiColon
     };
     (obkt) => {
         TokenType::OpenBracket
@@ -82,11 +80,14 @@ macro_rules! token {
     (cbra) => {
         TokenType::CloseBrace
     };
+    (kw: $kw:expr) => {
+        TokenType::Keyword($kw)
+    };
     (id: $id:ident) => {
         TokenType::Identifier(String::from(stringify!($id)))
     };
     (num: $num:literal ) => {
-        TokenType::IntegerLiteral( String::from(stringify!($num)))
+        TokenType::IntegerLiteral(String::from(stringify!($num)))
     };
 }
 
@@ -94,11 +95,10 @@ macro_rules! token {
 fn test_token_macro() {
     assert_eq!(token!(:), TokenType::Colon);
 
-    assert_eq!(token!(,),TokenType::Comma);
+    assert_eq!(token!(,), TokenType::Comma);
 
-    assert_eq!(token!(;),TokenType::SemiColon);
-    assert_eq!(token!(id: foo),TokenType::Identifier(String::from("foo")));
-
+    assert_eq!(token!(;), TokenType::SemiColon);
+    assert_eq!(token!(id: foo), TokenType::Identifier(String::from("foo")));
 }
 
 #[test]
@@ -108,11 +108,7 @@ fn test_lex_identifier() {
 
 #[test]
 fn test_lex_colon_after_identifier() {
-    assert_token_types!(
-        "id:   ",
-        token!(id: id),
-        token!(:)
-    );
+    assert_token_types!("id:   ", token!(id: id), token!(:));
 }
 
 #[test]
@@ -148,7 +144,7 @@ fn test_lex_type() {
     uint8  flags;
     bool   enabled;
 } ",
-        token!(id: struct),
+        token!(kw: Keyword::Struct),
         token!(id: foo),
         token!(obra),
         token!(id: uint32),

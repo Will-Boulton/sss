@@ -8,8 +8,6 @@ pub trait ToLocation {
     fn to_location(self) -> SourceLocation;
 }
 
-
-
 #[derive(PartialEq, Clone, Copy, Debug, Eq)]
 pub struct SourcePoint {
     pub line: usize,
@@ -27,7 +25,6 @@ impl ToLocation for SourceRange {
         SourceLocation::Range(self)
     }
 }
-
 
 impl SourcePoint {
     pub(crate) fn zero() -> SourcePoint {
@@ -87,4 +84,3 @@ macro_rules! location {
         ))
     };
 }
-

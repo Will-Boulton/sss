@@ -1,9 +1,10 @@
-use crate::source::{SourceLocation, SourcePoint, SourceRange, ToLocation};
+use crate::source::{SourceLocation, SourcePoint, SourceRange};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenType {
     Illegal,
     Identifier(String),
+    Keyword(Keyword),
     IntegerLiteral(String),
     SemiColon,
     Colon,
@@ -12,6 +13,24 @@ pub enum TokenType {
     CloseBrace,
     OpenBracket,
     CloseBracket,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Keyword {
+    Message,
+    Protocol,
+    Reserved,
+    Struct,
+}
+
+pub(super) fn lex_keyword(txt: &str) -> Option<Keyword> {
+    return match txt {
+        "message" => Some(Keyword::Message),
+        "protocol" => Some(Keyword::Protocol),
+        "reserved" => Some(Keyword::Reserved),
+        "struct" => Some(Keyword::Struct),
+        &_ => None,
+    };
 }
 
 pub struct Token {
@@ -30,7 +49,6 @@ macro_rules! token {
 }
 
 impl Token {
-
     pub fn get(&self) -> &TokenType {
         return &self.token;
     }

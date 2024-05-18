@@ -1,7 +1,7 @@
-use crate::lexer::token::TokenType::{Identifier, IntegerLiteral};
-pub use token::{Token, TokenType};
+use crate::lexer::token::lex_keyword;
+use crate::source::{SourceLocation, SourcePoint, ToLocation};
 use crate::{location, token};
-use crate::source::{SourceLocation, SourcePoint, SourceRange, ToLocation};
+pub use token::{Keyword, Token, TokenType};
 
 mod token;
 
@@ -119,8 +119,18 @@ impl<'a> Lexer<'a> {
                     .collect();
 
                 self.advance_cursor(identifier.len());
-
-                return Some(token!(Identifier,location!(start_loc => self.current_location), identifier));
+                return match lex_keyword(identifier.as_str()) {
+                    Some(keyword) => Some(token!(
+                        Keyword,
+                        location!(start_loc => self.current_location),
+                        keyword
+                    )),
+                    _ => Some(token!(
+                        Identifier,
+                        location!(start_loc => self.current_location),
+                        identifier
+                    )),
+                };
             }
             char if char.is_numeric() => {
                 let num: String = self
@@ -130,18 +140,22 @@ impl<'a> Lexer<'a> {
                     .take_while(move |c| c.is_numeric())
                     .collect();
                 self.advance_cursor(num.len());
-                return Some(token!(IntegerLiteral,location!(start_loc => self.current_location), num));
+                return Some(token!(
+                    IntegerLiteral,
+                    location!(start_loc => self.current_location),
+                    num
+                ));
             }
             char if KEY_CHARS.contains(&char) => {
                 _ = self.next_char();
                 return match char {
-                    '[' => Some(token!(OpenBracket,start_loc.to_location())),
-                    ']' => Some(token!(CloseBracket,start_loc.to_location())),
-                    '{' => Some(token!(OpenBrace,start_loc.to_location())),
-                    '}' => Some(token!(CloseBrace,start_loc.to_location())),
-                    ',' => Some(token!(Comma,start_loc.to_location())),
-                    ':' => Some(token!(Colon,start_loc.to_location())),
-                    ';' => Some(token!(SemiColon,start_loc.to_location())),
+                    '[' => Some(token!(OpenBracket, start_loc.to_location())),
+                    ']' => Some(token!(CloseBracket, start_loc.to_location())),
+                    '{' => Some(token!(OpenBrace, start_loc.to_location())),
+                    '}' => Some(token!(CloseBrace, start_loc.to_location())),
+                    ',' => Some(token!(Comma, start_loc.to_location())),
+                    ':' => Some(token!(Colon, start_loc.to_location())),
+                    ';' => Some(token!(SemiColon, start_loc.to_location())),
                     _ => panic!("unreachable"),
                 };
             }
