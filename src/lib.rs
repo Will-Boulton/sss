@@ -2,6 +2,7 @@ pub mod lexer;
 pub mod parser;
 pub mod source;
 pub mod syntax;
+mod sssc;
 
 #[cfg(test)]
 mod test {
