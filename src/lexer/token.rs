@@ -1,4 +1,5 @@
-use crate::source::{SourceLocation, SourcePoint, SourceRange};
+use crate::lexer::keyword::Keyword;
+use crate::source::{SourceLocation, ToLocation};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenType {
@@ -15,32 +16,12 @@ pub enum TokenType {
     CloseBracket,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Keyword {
-    Enum,
-    Message,
-    Protocol,
-    Reserved,
-    Struct,
-}
-
-pub(super) fn lex_keyword(txt: &str) -> Option<Keyword> {
-    return match txt {
-        "enum" => Some(Keyword::Enum),
-        "message" => Some(Keyword::Message),
-        "protocol" => Some(Keyword::Protocol),
-        "reserved" => Some(Keyword::Reserved),
-        "struct" => Some(Keyword::Struct),
-        &_ => None,
-    };
-}
-
 pub struct Token {
     token: TokenType,
     location: SourceLocation,
 }
 
-#[macro_export]
+#[macro_export(crate)]
 macro_rules! token {
     ($tt:ident, $loc:expr) => {
         Token::new(TokenType::$tt, $loc)
@@ -51,24 +32,18 @@ macro_rules! token {
 }
 
 impl Token {
-    pub fn get(&self) -> &TokenType {
-        return &self.token;
+    pub fn get_type(&self) -> &TokenType {
+        &self.token
     }
 
-    pub fn from_point(token: TokenType, source_point: SourcePoint) -> Self {
-        return Token {
-            token,
-            location: SourceLocation::Point(source_point),
-        };
-    }
-    pub fn from_range(token: TokenType, source_range: SourceRange) -> Self {
-        return Token {
-            token,
-            location: SourceLocation::Range(source_range),
-        };
+    pub fn get_location(&self) -> &SourceLocation {
+        &self.location
     }
 
-    pub fn new(token: TokenType, location: SourceLocation) -> Self {
-        return Token { token, location };
+    pub fn new(token: TokenType, location: impl ToLocation) -> Self {
+        return Token {
+            token,
+            location: location.to_location(),
+        };
     }
 }

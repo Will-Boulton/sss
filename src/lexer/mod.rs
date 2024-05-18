@@ -1,21 +1,18 @@
-use crate::lexer::token::lex_keyword;
-use crate::source::{SourceLocation, SourcePoint, ToLocation};
-use crate::{location, token};
-pub use token::{Keyword, Token, TokenType};
+use crate::source::{Point, Range};
+use crate::token;
+use keyword::lex_keyword;
+pub use keyword::Keyword;
+pub use token::{Token, TokenType};
 
+mod keyword;
 mod token;
 
 #[derive(Clone)]
 pub struct Lexer<'a> {
     input: &'a str,
     curr_offset: usize,
-    current_location: SourcePoint,
-    line_pos: usize,
-    line: usize,
-    ch: char,
-    prev_token: Option<TokenType>,
+    current_location: Point
 }
-const EOF_CHAR: char = '\0';
 
 pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + 'a {
     Lexer::new(input)
@@ -23,12 +20,6 @@ pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + 'a {
 
 fn is_identifier_char(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '_'
-}
-
-pub(crate) enum LexerError {
-    InvalidInteger(SourcePoint),
-    InvalidIdentifier(SourcePoint),
-    UnexpectedError,
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -44,11 +35,7 @@ impl<'a> Lexer<'a> {
         Self {
             input,
             curr_offset: 0,
-            current_location: SourcePoint::zero(),
-            line_pos: 0,
-            line: 0,
-            ch: EOF_CHAR,
-            prev_token: None,
+            current_location: Point::zero()
         }
     }
 
@@ -66,10 +53,6 @@ impl<'a> Lexer<'a> {
 
     fn has_current_char(&self) -> bool {
         self.current_char().is_some()
-    }
-
-    fn has_next_char(&self) -> bool {
-        self.peek_next_char().is_some()
     }
 
     fn peek_next_char(&self) -> Option<char> {
@@ -97,10 +80,10 @@ impl<'a> Lexer<'a> {
             match self.current_char() {
                 Some(ch) if ch.is_whitespace() => {
                     self.next_char();
-                }
-                Some(ch) => {
+                },
+                Some(_) => {
                     break;
-                }
+                },
                 None => return None,
             }
         }
@@ -122,12 +105,12 @@ impl<'a> Lexer<'a> {
                 return match lex_keyword(identifier.as_str()) {
                     Some(keyword) => Some(token!(
                         Keyword,
-                        location!(start_loc => self.current_location),
+                        Range::new(start_loc, self.current_location),
                         keyword
                     )),
                     _ => Some(token!(
                         Identifier,
-                        location!(start_loc => self.current_location),
+                        Range::new(start_loc, self.current_location),
                         identifier
                     )),
                 };
@@ -142,20 +125,20 @@ impl<'a> Lexer<'a> {
                 self.advance_cursor(num.len());
                 return Some(token!(
                     IntegerLiteral,
-                    location!(start_loc => self.current_location),
+                    Range::new(start_loc, self.current_location),
                     num
                 ));
             }
             char if KEY_CHARS.contains(&char) => {
                 _ = self.next_char();
                 return match char {
-                    '[' => Some(token!(OpenBracket, start_loc.to_location())),
-                    ']' => Some(token!(CloseBracket, start_loc.to_location())),
-                    '{' => Some(token!(OpenBrace, start_loc.to_location())),
-                    '}' => Some(token!(CloseBrace, start_loc.to_location())),
-                    ',' => Some(token!(Comma, start_loc.to_location())),
-                    ':' => Some(token!(Colon, start_loc.to_location())),
-                    ';' => Some(token!(SemiColon, start_loc.to_location())),
+                    '[' => Some(token!(OpenBracket, start_loc)),
+                    ']' => Some(token!(CloseBracket, start_loc)),
+                    '{' => Some(token!(OpenBrace, start_loc)),
+                    '}' => Some(token!(CloseBrace, start_loc)),
+                    ',' => Some(token!(Comma, start_loc)),
+                    ':' => Some(token!(Colon, start_loc)),
+                    ';' => Some(token!(SemiColon, start_loc)),
                     _ => panic!("unreachable"),
                 };
             }

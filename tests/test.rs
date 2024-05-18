@@ -35,7 +35,7 @@ macro_rules! assert_token_types {
     };
     ($text:literal,
         $($expected:expr),*) => {
-        let mut tokens = tokenize($text).map(|t|t.get().clone());
+        let mut tokens = tokenize($text).map(|t|t.get_type().clone());
         assert_token_types!(tokens, $($expected),*);
     };
 }
