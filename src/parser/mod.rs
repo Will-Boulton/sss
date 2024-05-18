@@ -1,4 +1,4 @@
-use crate::lexer::{Keyword, Token, TokenType};
+use crate::lexer::{ Token, TokenType};
 use crate::parser::ParseError::UnexpectedToken;
 use crate::syntax::{DeclarationSyntax, ProtocolDeclarationSyntax, SyntaxUnit};
 
@@ -55,7 +55,7 @@ where
     pub fn parse_protocol(&mut self) -> Result<ProtocolDeclarationSyntax, ParseError> {
         return match self.tokens.next() {
             Some(token) => match token.get_type() {
-                TokenType::Keyword(keyword) if keyword == &Keyword::Protocol => {
+                TokenType::Identifier(id) if id == "protocol" => {
                     self.parse_qualified_name().and_then(|pds| {
                         self.assert_next_token_matches(TokenType::SemiColon)?;
                         Ok(ProtocolDeclarationSyntax::new(pds))

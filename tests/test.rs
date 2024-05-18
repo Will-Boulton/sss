@@ -1,4 +1,3 @@
-use sss::lexer::Keyword;
 use sss::lexer::TokenType;
 use sss::lexer::*;
 use sss::parser::Parser;
@@ -149,7 +148,7 @@ fn test_lex_type() {
     uint8  flags;
     bool   enabled;
 } ",
-        token!(kw: Keyword::Struct),
+        token!(id: struct),
         token!(id: foo),
         token!(obra),
         token!(id: uint32),

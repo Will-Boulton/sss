@@ -1,10 +1,7 @@
 use crate::source::{Point, Range};
 use crate::token;
-use keyword::lex_keyword;
-pub use keyword::Keyword;
 pub use token::{Token, TokenType};
 
-mod keyword;
 mod token;
 
 #[derive(Clone)]
@@ -14,7 +11,7 @@ pub struct Lexer<'a> {
     current_location: Point,
 }
 
-pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + Clone + 'a {
+pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + Clone + '_ {
     Lexer::new(input)
 }
 
@@ -102,18 +99,12 @@ impl<'a> Lexer<'a> {
                     .collect();
 
                 self.advance_cursor(identifier.len());
-                return match lex_keyword(identifier.as_str()) {
-                    Some(keyword) => Some(token!(
-                        Keyword,
-                        Range::new(start_loc, self.current_location),
-                        keyword
-                    )),
-                    _ => Some(token!(
+                Some(token!(
                         Identifier,
                         Range::new(start_loc, self.current_location),
                         identifier
-                    )),
-                };
+                    )
+                )
             }
             char if char.is_numeric() => {
                 let num: String = self

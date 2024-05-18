@@ -1,10 +1,8 @@
-use crate::lexer::keyword::Keyword;
 use crate::source::{SourceLocation, ToLocation};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenType {
     Identifier(String),
-    Keyword(Keyword),
     IntegerLiteral(String),
     SemiColon,
     Colon,

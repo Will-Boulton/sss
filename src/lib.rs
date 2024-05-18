@@ -2,7 +2,9 @@ pub mod lexer;
 pub mod parser;
 pub mod source;
 pub mod syntax;
-mod sssc;
+pub mod sssc;
+pub mod data_types;
+pub mod protocol;
 
 #[cfg(test)]
 mod test {
