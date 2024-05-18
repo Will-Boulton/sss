@@ -3,19 +3,20 @@ use crate::source::{SourceLocation, ToLocation};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenType {
-    Illegal,
     Identifier(String),
     Keyword(Keyword),
     IntegerLiteral(String),
     SemiColon,
     Colon,
     Comma,
+    Dot,
     OpenBrace,
     CloseBrace,
     OpenBracket,
     CloseBracket,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Token {
     token: TokenType,
     location: SourceLocation,

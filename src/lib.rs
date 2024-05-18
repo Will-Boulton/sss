@@ -10,7 +10,7 @@ mod test {
     #[test]
     fn main() {
         println!("Hello, world!");
-        let my_struct = StructDeclaration {
+        let my_struct = StructDeclarationSyntax {
             name: String::from("message_1"),
             id: Some(1usize),
             fields: vec![FieldDeclaration {

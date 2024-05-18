@@ -1,15 +1,44 @@
-pub use enum_syntax::EnumDeclaration;
+use crate::lexer::TokenType;
+pub use enum_syntax::EnumDeclarationSyntax;
 pub use field_syntax::FieldDeclaration;
 pub use field_type_syntax::FieldType;
-pub use struct_syntax::StructDeclaration;
+pub use struct_syntax::StructDeclarationSyntax;
 
 mod enum_syntax;
 mod field_syntax;
 mod field_type_syntax;
 mod struct_syntax;
 
-pub enum SyntaxNode {
-    Struct(StructDeclaration),
+#[derive(Debug)]
+pub enum DeclarationSyntax {
+    Struct(StructDeclarationSyntax),
+    Enum(EnumDeclarationSyntax),
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct ProtocolDeclarationSyntax {
+    components: Vec<String>,
+}
+
+impl ProtocolDeclarationSyntax {
+    pub fn new(components: Vec<String>) -> Self {
+        ProtocolDeclarationSyntax { components }
+    }
+}
+
+#[derive(Debug)]
+pub struct SyntaxUnit {
+    protocol: ProtocolDeclarationSyntax,
+    declarations: Vec<DeclarationSyntax>,
+}
+
+impl SyntaxUnit {
+    pub fn new(protocol: ProtocolDeclarationSyntax) -> Self {
+        SyntaxUnit {
+            protocol,
+            declarations: vec![],
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -20,7 +49,7 @@ pub enum Signedness {
 
 #[derive(Debug)]
 pub enum CustomType {
-    Enum(EnumDeclaration),
+    Enum(EnumDeclarationSyntax),
 }
 
 #[derive(Debug)]

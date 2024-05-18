@@ -1,6 +1,8 @@
 use sss::lexer::Keyword;
 use sss::lexer::TokenType;
 use sss::lexer::*;
+use sss::parser::Parser;
+use sss::syntax::ProtocolDeclarationSyntax;
 
 macro_rules! assert_no_token {
     ($tokens:ident) => {{
@@ -64,6 +66,9 @@ macro_rules! token {
     };
     (,) => {
         TokenType::Comma
+    };
+    (.) => {
+        TokenType::Dot
     };
     (;) => {
         TokenType::SemiColon
@@ -158,4 +163,38 @@ fn test_lex_type() {
         token!(;),
         token!(cbra)
     );
+}
+
+#[test]
+fn test_parse_protocol_declaration() {
+    let mut tokens = tokenize("protocol foo.bar.baz;");
+    let mut parser = Parser::new(&mut tokens);
+
+    let proto = parser.parse_protocol();
+
+    assert_eq!(
+        proto,
+        Ok(ProtocolDeclarationSyntax::new(
+            vec!["foo", "bar", "baz"]
+                .into_iter()
+                .map(|x| String::from(x))
+                .collect()
+        ))
+    );
+}
+
+#[test]
+fn test_parse_qualified_name() {
+    let mut text = "foo.bar.baz;";
+
+    let mut tokens = tokenize(text);
+
+    let mut parser = Parser::new(&mut tokens);
+
+    let proto = parser.parse_qualified_name();
+
+    assert_eq!(proto,  Ok(vec!["foo", "bar", "baz"]
+        .into_iter()
+        .map(|x| String::from(x))
+        .collect::<Vec<_>>()));
 }

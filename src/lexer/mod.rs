@@ -11,10 +11,10 @@ mod token;
 pub struct Lexer<'a> {
     input: &'a str,
     curr_offset: usize,
-    current_location: Point
+    current_location: Point,
 }
 
-pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + 'a {
+pub fn tokenize<'a>(input: &'a str) -> impl Iterator<Item = Token> + Clone + 'a {
     Lexer::new(input)
 }
 
@@ -35,7 +35,7 @@ impl<'a> Lexer<'a> {
         Self {
             input,
             curr_offset: 0,
-            current_location: Point::zero()
+            current_location: Point::zero(),
         }
     }
 
@@ -80,17 +80,17 @@ impl<'a> Lexer<'a> {
             match self.current_char() {
                 Some(ch) if ch.is_whitespace() => {
                     self.next_char();
-                },
+                }
                 Some(_) => {
                     break;
-                },
+                }
                 None => return None,
             }
         }
         let first_char = self.current_char()?;
         let start_loc = self.current_location.clone();
 
-        const KEY_CHARS: [char; 7] = ['[', ']', '{', '}', ',', ':', ';'];
+        const KEY_CHARS: [char; 8] = ['[', ']', '{', '}', ',', ':', ';', '.'];
 
         return match first_char {
             char if char.is_ascii_alphabetic() => {
@@ -138,6 +138,7 @@ impl<'a> Lexer<'a> {
                     '}' => Some(token!(CloseBrace, start_loc)),
                     ',' => Some(token!(Comma, start_loc)),
                     ':' => Some(token!(Colon, start_loc)),
+                    '.' => Some(token!(Dot, start_loc)),
                     ';' => Some(token!(SemiColon, start_loc)),
                     _ => panic!("unreachable"),
                 };
