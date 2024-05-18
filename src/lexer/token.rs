@@ -17,6 +17,7 @@ pub enum TokenType {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Keyword {
+    Enum,
     Message,
     Protocol,
     Reserved,
@@ -25,6 +26,7 @@ pub enum Keyword {
 
 pub(super) fn lex_keyword(txt: &str) -> Option<Keyword> {
     return match txt {
+        "enum" => Some(Keyword::Enum),
         "message" => Some(Keyword::Message),
         "protocol" => Some(Keyword::Protocol),
         "reserved" => Some(Keyword::Reserved),
