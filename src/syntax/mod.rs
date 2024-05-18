@@ -39,6 +39,11 @@ impl SyntaxUnit {
             declarations: vec![],
         }
     }
+
+    pub fn add_declaration(&mut self, decl: DeclarationSyntax)
+    {
+        self.declarations.push(decl)
+    }
 }
 
 #[derive(Debug)]

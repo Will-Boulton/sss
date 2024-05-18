@@ -193,8 +193,11 @@ fn test_parse_qualified_name() {
 
     let proto = parser.parse_qualified_name();
 
-    assert_eq!(proto,  Ok(vec!["foo", "bar", "baz"]
-        .into_iter()
-        .map(|x| String::from(x))
-        .collect::<Vec<_>>()));
+    assert_eq!(
+        proto,
+        Ok(vec!["foo", "bar", "baz"]
+            .into_iter()
+            .map(|x| String::from(x))
+            .collect::<Vec<_>>())
+    );
 }

@@ -1,6 +1,6 @@
 use crate::lexer::{Keyword, Token, TokenType};
 use crate::parser::ParseError::UnexpectedToken;
-use crate::syntax::{ProtocolDeclarationSyntax, SyntaxUnit};
+use crate::syntax::{DeclarationSyntax, ProtocolDeclarationSyntax, SyntaxUnit};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParseError {
@@ -28,21 +28,38 @@ where
         Parser { tokens }
     }
     pub fn parse(&mut self) -> Result<Option<SyntaxUnit>, ParseError> {
-        let protocol = self.parse_protocol()?;
-        Ok(Some(SyntaxUnit::new(protocol)))
+        self.parse_protocol()
+            .and_then(|pds|Ok(SyntaxUnit::new(pds)))
+            .and_then(|mut syntax_unit| {
+                loop {
+                    match self.parse_declaration() {
+                        Ok(Some(decl)) => {
+                            syntax_unit.add_declaration(decl);
+                        },
+                        Ok(None) => {
+                            break
+                        }
+                        Err(E) =>{
+                            return Err(E)
+                        }
+                    }
+                }
+                return Ok(Some(syntax_unit))
+            })
+    }
+
+    pub fn parse_declaration(&mut self) -> Result<Option<DeclarationSyntax>, ParseError> {
+        todo!()
     }
 
     pub fn parse_protocol(&mut self) -> Result<ProtocolDeclarationSyntax, ParseError> {
         return match self.tokens.next() {
             Some(token) => match token.get_type() {
                 TokenType::Keyword(keyword) if keyword == &Keyword::Protocol => {
-                    match self.parse_qualified_name() {
-                        Ok(pds) => {
-                            self.assert_next_token_matches(TokenType::SemiColon)?;
-                            Ok(ProtocolDeclarationSyntax::new(pds))
-                        }
-                        Err(e) => Err(e),
-                    }
+                    self.parse_qualified_name().and_then(|pds| {
+                        self.assert_next_token_matches(TokenType::SemiColon)?;
+                        Ok(ProtocolDeclarationSyntax::new(pds))
+                    })
                 }
                 _ => Err(ParseError::UnexpectedToken(token)),
             },
