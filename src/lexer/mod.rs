@@ -100,11 +100,10 @@ impl<'a> Lexer<'a> {
 
                 self.advance_cursor(identifier.len());
                 Some(token!(
-                        Identifier,
-                        Range::new(start_loc, self.current_location),
-                        identifier
-                    )
-                )
+                    Identifier,
+                    Range::new(start_loc, self.current_location),
+                    identifier
+                ))
             }
             char if char.is_numeric() => {
                 let num: String = self

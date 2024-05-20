@@ -1,24 +1,24 @@
-use crate::data_types::{ScalarType, FieldType};
-
+use crate::data_types::{FieldType, ScalarType};
+#[derive(Debug)]
 pub enum ArrayLike {
-    FixedArray{scalar: ScalarType, length: usize },
-    AsciiString{length: usize},
-    Bytes{length: usize}
+    FixedArray { scalar: ScalarType, length: usize },
+    AsciiString { length: usize },
+    Bytes { length: usize },
 }
-
 
 impl FieldType for ArrayLike {
     fn size_bytes(&self) -> usize {
         match self {
-            ArrayLike::FixedArray { scalar, length} => {
-                length * scalar.size_bytes()
-            }
-            ArrayLike::AsciiString { length } => {
-                *length
-            }
-            ArrayLike::Bytes { length } => {
-                *length
-            }
+            ArrayLike::FixedArray { scalar, length } => length * scalar.size_bytes(),
+            ArrayLike::AsciiString { length } => *length,
+            ArrayLike::Bytes { length } => *length,
         }
+    }
+}
+
+impl ArrayLike {
+    pub fn try_parse(txt: &str) -> Option<ArrayLike>
+    {
+        todo!() // need to do this in the parser itself
     }
 }

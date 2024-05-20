@@ -1,8 +1,8 @@
-use crate::syntax::field_type_syntax::FieldType;
+use crate::data_types::FieldType_;
 
 #[derive(Debug)]
 pub struct FieldDeclaration {
     pub name: String,
-    pub field_type: FieldType,
+    pub field_type: FieldType_,
     pub description: Option<String>,
 }

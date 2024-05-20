@@ -1,17 +1,17 @@
 use crate::lexer::TokenType;
 pub use enum_syntax::EnumDeclarationSyntax;
 pub use field_syntax::FieldDeclaration;
-pub use field_type_syntax::FieldType;
-pub use struct_syntax::StructDeclarationSyntax;
+pub use field_type_syntax::FieldTypeSyntax;
+pub use message_syntax::MessageDeclarationSyntax;
 
 mod enum_syntax;
 mod field_syntax;
 mod field_type_syntax;
-mod struct_syntax;
+mod message_syntax;
 
 #[derive(Debug)]
 pub enum DeclarationSyntax {
-    Struct(StructDeclarationSyntax),
+    Message(MessageDeclarationSyntax),
     Enum(EnumDeclarationSyntax),
 }
 
@@ -40,8 +40,7 @@ impl SyntaxUnit {
         }
     }
 
-    pub fn add_declaration(&mut self, decl: DeclarationSyntax)
-    {
+    pub fn add_declaration(&mut self, decl: DeclarationSyntax) {
         self.declarations.push(decl)
     }
 }

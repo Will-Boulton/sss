@@ -1,10 +1,10 @@
+pub mod data_types;
 pub mod lexer;
 pub mod parser;
-pub mod source;
-pub mod syntax;
-pub mod sssc;
-pub mod data_types;
 pub mod protocol;
+pub mod source;
+pub mod sssc;
+pub mod syntax;
 
 #[cfg(test)]
 mod test {
@@ -13,12 +13,12 @@ mod test {
     #[test]
     fn main() {
         println!("Hello, world!");
-        let my_struct = StructDeclarationSyntax {
+        let my_struct = MessageDeclarationSyntax {
             name: String::from("message_1"),
             id: Some(1usize),
             fields: vec![FieldDeclaration {
                 name: String::from("field1"),
-                field_type: FieldType::BuiltIn(BuiltInType::Integer {
+                field_type: FieldTypeSyntax::BuiltIn(BuiltInType::Integer {
                     size_bits: 16,
                     signedness: Signedness::Signed,
                     maybe_endianness: None,
