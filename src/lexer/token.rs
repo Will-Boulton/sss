@@ -3,7 +3,7 @@ use crate::source::{SourceLocation, ToLocation};
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TokenType {
     Identifier(String),
-    IntegerLiteral(String),
+    IntegerLiteral(usize),
     SemiColon,
     Colon,
     Comma,
@@ -12,6 +12,7 @@ pub enum TokenType {
     CloseBrace,
     OpenBracket,
     CloseBracket,
+    Invalid
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

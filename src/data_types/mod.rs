@@ -1,5 +1,5 @@
-use array_like::ArrayLike;
-use scalar::ScalarType;
+pub use array_like::ArrayLike;
+pub use scalar::ScalarType;
 pub mod array_like;
 pub mod scalar;
 
@@ -7,7 +7,7 @@ mod enumeration;
 
 mod structure;
 
-trait FieldType {
+pub trait FieldType {
     fn size_bytes(&self) -> usize;
 }
 
@@ -16,15 +16,6 @@ pub enum FieldType_ {
     Scalar(ScalarType),
     Vector(ArrayLike),
     Padding(usize),
-}
-
-impl FieldType_ {
-    pub fn try_parse(txt: &str) -> Option<FieldType_>
-    {
-        ScalarType::try_parse(txt).map(|x|FieldType_::Scalar(x))
-            .or_else(||ArrayLike::try_parse(txt).map(|x|FieldType_::Vector(x)))
-            .or_else(||txt.parse::<usize>().ok().map(|s|FieldType_::Padding(s)))
-    }
 }
 
 impl FieldType for FieldType_ {

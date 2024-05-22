@@ -15,10 +15,3 @@ impl FieldType for ArrayLike {
         }
     }
 }
-
-impl ArrayLike {
-    pub fn try_parse(txt: &str) -> Option<ArrayLike>
-    {
-        todo!() // need to do this in the parser itself
-    }
-}

@@ -1,6 +1,7 @@
 use crate::source::{Point, Range};
 use crate::token;
 pub use token::{Token, TokenType};
+use crate::parser::ParseError;
 
 mod token;
 
@@ -112,12 +113,19 @@ impl<'a> Lexer<'a> {
                     .skip(self.curr_offset)
                     .take_while(move |c| c.is_numeric())
                     .collect();
+
                 self.advance_cursor(num.len());
-                return Some(token!(
-                    IntegerLiteral,
-                    Range::new(start_loc, self.current_location),
-                    num
-                ));
+                return match str::parse::<usize>(num.as_str()) {
+                    Ok(num) => Some(token!(
+                        IntegerLiteral,
+                        Range::new(start_loc, self.current_location),
+                        num
+                    )),
+                    Err(_) => Some(token!(
+                        Invalid,
+                        Range::new(start_loc, self.current_location)
+                    ))
+                };
             }
             char if KEY_CHARS.contains(&char) => {
                 _ = self.next_char();

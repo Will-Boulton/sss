@@ -1,8 +1,9 @@
+use std::cmp::PartialEq;
+use crate::data_types::{FieldType_, ScalarType, ArrayLike};
+use crate::data_types::scalar::ByteSize;
 use crate::lexer::{Token, TokenType};
 use crate::parser::ParseError::UnexpectedToken;
-use crate::syntax::{
-    DeclarationSyntax, MessageDeclarationSyntax, ProtocolDeclarationSyntax, SyntaxUnit,
-};
+use crate::syntax::{DeclarationSyntax, MessageDeclarationSyntax, MemberDeclaration, ProtocolDeclarationSyntax, SyntaxUnit, FieldDeclaration};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParseError {
@@ -11,7 +12,8 @@ pub enum ParseError {
     ExpectedAToken,
     MissingIdentifier,
     ExpectedProtocolDeclaration,
-    InvalidNumberFormat
+    InvalidNumberFormat,
+    UnknownType
 }
 
 pub struct Parser<'a, T: Iterator<Item = Token> + Clone> {
@@ -70,30 +72,117 @@ where
     }
 
     fn parse_message_declaration(&mut self) -> Result<MessageDeclarationSyntax, ParseError> {
+        let name = self.get_next_token_if(|t| match t.get_type() {
+            TokenType::Identifier(id) => Some(id.clone()),
+            _ => None
+        }).map_err(|t|match t {
+            Some(t) => UnexpectedToken(t.clone(), None),
+            None => ParseError::ExpectedAToken
+        })?;
+
         self.assert_next_token_matches(TokenType::OpenBracket)?;
         let id = self.parse_number()?;
 
         self.assert_next_token_matches(TokenType::CloseBracket)?;
         self.assert_next_token_matches(TokenType::OpenBrace)?;
 
-        let fields = vec![];
+        let mut members : Vec<MemberDeclaration> = vec![];
+        while let Some(member) = self.parse_member()? {
+            members.push(member);
+            if let Some(t) = self.tokens.clone().next()  {
+                if *t.get_type() == TokenType::CloseBrace {
+                    break
+                }
+            }
+        }
+        self.tokens.next();
 
-
-
-        self.assert_next_token_matches(TokenType::CloseBrace)?;
+        return Ok(MessageDeclarationSyntax{ name, id, members })
     }
 
     fn parse_number(&mut self) -> Result<usize, ParseError> {
         match self.tokens.next() {
             None => Err(ParseError::ExpectedAToken),
             Some(t) => match t.get_type() {
-                TokenType::IntegerLiteral(int) => match int.parse::<usize>() {
-                    Ok(val) => Ok(val),
-                    Err(_) => Err(ParseError::InvalidNumberFormat)
-                },
+                TokenType::IntegerLiteral(int) => Ok(*int),
                 _ => Err(UnexpectedToken(t.clone(),None))
             }
         }
+    }
+
+    fn parse_member(&mut self) -> Result<Option<MemberDeclaration>, ParseError> {
+        match self.tokens.next() {
+            None => Ok(None),
+            Some(t) => match t.get_type() {
+                TokenType::Identifier(type_name) => match self.try_parse_field(type_name.as_str())? {
+                    None => Ok(None),
+                    Some(f) => Ok(Some(MemberDeclaration::Field(f)))
+                },
+                TokenType::IntegerLiteral(size,) => {
+                    // only padding can start with an integer literal it will always be followed by
+                    // a semi colon
+                    self.assert_next_token_matches(TokenType::SemiColon)?;
+                    Ok(Some(MemberDeclaration::Padding(*size)))
+                }
+                TokenType::SemiColon => Ok(None),
+                _ => Err(UnexpectedToken(t.clone(),None))
+            }
+        }
+    }
+
+    fn try_parse_field(&mut self, identifier: &str) -> Result<Option<FieldDeclaration>, ParseError> {
+        let scalar_type : ScalarType =  match ScalarType::try_parse(identifier) {
+            None => None,
+            Some(scalarType) => Some(scalarType)
+        }.ok_or(ParseError::UnknownType)?;
+
+
+        let field_type : FieldType_ = match self.tokens.next() {
+            None => Err(ParseError::ExpectedAToken),
+            Some(tok) => match tok.get_type() {
+                TokenType::OpenBracket => {
+                    let r = Ok(FieldType_::Vector(self.try_parse_vector_type(scalar_type)?));
+                    self.assert_next_token_matches(TokenType::Colon)?;
+                    r
+                },
+                TokenType::Colon => Ok(FieldType_::Scalar(scalar_type)),
+                _ => Err(UnexpectedToken(tok.clone(), None))
+            }
+        }?;
+
+        let name = self.get_identifier()?.ok_or_else(||ParseError::ExpectedAToken)?;
+
+        self.assert_next_token_matches(TokenType::SemiColon)?;
+
+        Ok(Some(FieldDeclaration{
+            name,
+            field_type,
+            description: None
+        }))
+    }
+
+
+    pub fn try_parse_vector_type(&mut self, scalar_type: ScalarType) -> Result<ArrayLike,ParseError>{
+        let size = self.get_next_token_if(|t| match t.get_type() {
+            TokenType::IntegerLiteral(size) if *size > 0 => Some(size.clone()),
+            TokenType::IntegerLiteral(_)  => None,
+            _ => None
+        }).map_err(|t|match t {
+            None => ParseError::ExpectedAToken,
+            Some(t) => UnexpectedToken(t.clone(), Some(String::from("Expected an non-zero integer size")))
+        })?.clone();
+
+        self.assert_next_token_matches(TokenType::CloseBracket)?;
+
+        if let ScalarType::ByteSized(b) = scalar_type {
+            return match b {
+                ByteSize::Byte => Ok(ArrayLike::Bytes {length: size}),
+                ByteSize::Char => Ok(ArrayLike::AsciiString {length: size}),
+                ByteSize::Ascii => Ok(ArrayLike::AsciiString {length: size})
+            }
+        }
+
+        return Ok(ArrayLike::FixedArray {length: size, scalar: scalar_type})
     }
 
     pub fn assert_next_token_matches(&mut self, tt: TokenType) -> Result<Token, ParseError> {
@@ -106,6 +195,19 @@ where
             }
             None => Err(ParseError::ExpectedAToken),
         };
+    }
+
+    fn get_next_token_if<F: FnOnce(&Token) -> Option<R>, R>(
+        &mut self,
+        token_matches: F,
+    ) -> Result<R, Option<Token>> {
+        match self.tokens.next() {
+            None => Err(None),
+            Some(token) => match token_matches(&token) {
+                None =>  Err(Some(token)),
+                Some(v) => Ok(v)
+            }
+        }
     }
 
     fn assert_next_token<F: FnOnce(&Token) -> bool>(
@@ -182,5 +284,30 @@ where
                 _ => None,
             })
             .collect());
+    }
+}
+
+
+#[cfg(test)]
+mod test{
+    use crate::lexer::tokenize;
+    use crate::parser::Parser;
+
+    #[test]
+    fn test_parse_message() {
+        let mut tokens = tokenize("message foop [123] {\
+            12;\
+            u32: skibbidy;\
+            byte: pow;\
+            ascii[10]: txt;\
+        \
+        }");
+        let mut parser = Parser::new(&mut tokens);
+
+        let dec = parser.parse_declaration();
+
+
+        println!("{:?}",dec)
+        //assert!(dec.ok().is_some())
     }
 }

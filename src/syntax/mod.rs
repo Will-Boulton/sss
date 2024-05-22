@@ -1,12 +1,9 @@
-use crate::lexer::TokenType;
 pub use enum_syntax::EnumDeclarationSyntax;
 pub use field_syntax::FieldDeclaration;
-pub use field_type_syntax::FieldTypeSyntax;
-pub use message_syntax::MessageDeclarationSyntax;
+pub use message_syntax::{MessageDeclarationSyntax,MemberDeclaration};
 
 mod enum_syntax;
 mod field_syntax;
-mod field_type_syntax;
 mod message_syntax;
 
 #[derive(Debug)]
