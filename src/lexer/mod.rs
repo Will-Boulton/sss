@@ -90,7 +90,7 @@ impl<'a> Lexer<'a> {
         const KEY_CHARS: [char; 8] = ['[', ']', '{', '}', ',', ':', ';', '.'];
 
         return match first_char {
-            char if char.is_ascii_alphabetic() => {
+            char if char.is_ascii_alphabetic() || char == '_' => {
                 let identifier: String = self
                     .input
                     .chars()
