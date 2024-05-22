@@ -292,6 +292,7 @@ where
 mod test{
     use crate::lexer::tokenize;
     use crate::parser::Parser;
+    use crate::syntax::DeclarationSyntax;
 
     #[test]
     fn test_parse_message() {
@@ -307,7 +308,76 @@ mod test{
         let dec = parser.parse_declaration();
 
 
-        println!("{:?}",dec)
-        //assert!(dec.ok().is_some())
+        assert!(dec.ok().is_some())
     }
+
+
+    macro_rules! assert_is_message {
+        ($decl:expr, name: $name:ident, id: $id:literal  $(,$cond:expr)* ) => {
+            match $decl {
+                DeclarationSyntax::Message($name) => {
+                    assert_eq!($name.name.as_str(), stringify!($name), "Name was expected to be '{}' but was '{}'",$name.name.as_str(), stringify!($name) );
+                    assert_eq!($name.id, $id, "Id was expected to be '{}' but was '{}'", $name.id, $id);
+
+                    let mut failures :Vec<&str> = vec![];
+                    $(if !$cond {
+                        failures.push(stringify!($cond))
+                    })*
+
+                    if failures.len() > 0 {
+                        for fail in failures {
+                            eprintln!("Assertion failed: {}", fail);
+                        }
+                        assert!(false, "assertions failed")
+                    }
+                },
+                _ => {
+                     assert!(false, "{}", stringify!($($cond)*))
+                }
+            }
+        };
+    }
+
+    #[test]
+    fn parse_syntax_unit() {
+        let mut tokens = tokenize("\
+        protocol foobar.baz;\
+        \
+        \
+        message foo [1] {\
+            u32: skibbidy;\
+            byte: pow;\
+            ascii[10]: txt;\
+        \
+        }\
+        \
+        \
+        message bar [2] {\
+            i32[150]:lots_of_ints;
+        \
+        }\
+        \
+        message baz [3] {12;}");
+
+        let mut parser = Parser::new(&mut tokens);
+
+        let dec = parser.parse();
+
+        assert!(dec.as_ref().ok().is_some());
+
+        let su = dec.unwrap().unwrap();
+
+        assert_eq!(2,su.protocol.components.len());
+
+        assert_eq!(3,su.declarations.len());
+
+        let d1 = &su.declarations[0];
+        let d2 = &su.declarations[1];
+        let d3 = &su.declarations[2];
+        assert_is_message!(d1, name: foo, id: 1, &foo.members.len() == &3);
+        assert_is_message!(d2, name: bar, id: 2, &bar.members.len() == &1);
+        assert_is_message!(d3, name: baz, id: 3, &baz.members.len() == &1);
+    }
+
+
 }

@@ -14,7 +14,7 @@ pub enum DeclarationSyntax {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct ProtocolDeclarationSyntax {
-    components: Vec<String>,
+    pub components: Vec<String>,
 }
 
 impl ProtocolDeclarationSyntax {
@@ -25,8 +25,8 @@ impl ProtocolDeclarationSyntax {
 
 #[derive(Debug)]
 pub struct SyntaxUnit {
-    protocol: ProtocolDeclarationSyntax,
-    declarations: Vec<DeclarationSyntax>,
+    pub protocol: ProtocolDeclarationSyntax,
+    pub declarations: Vec<DeclarationSyntax>,
 }
 
 impl SyntaxUnit {
