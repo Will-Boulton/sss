@@ -20,14 +20,13 @@ impl FieldType for Signed {
 }
 
 impl Signed {
-    pub fn try_parse(txt: &str) -> Option<Signed>
-    {
+    pub fn try_parse(txt: &str) -> Option<Signed> {
         return match txt {
             "i8" => Some(I8),
             "i16" => Some(I16),
             "i32" => Some(I32),
             "i64" => Some(I64),
-            _ => None
-        }
+            _ => None,
+        };
     }
 }

@@ -29,11 +29,14 @@ impl FieldType for ScalarType {
 }
 
 impl ScalarType {
-    pub fn try_parse(txt: &str) -> Option<ScalarType>
-    {
-        Unsigned::try_parse(txt).map(|x|ScalarType::Unsigned(x))
-            .or_else(||Signed::try_parse(txt).map(|x|ScalarType::Signed(x))
-            .or_else(||Float::try_parse(txt).map(|x|ScalarType::Float(x)))
-            .or_else(||ByteSize::try_parse(txt).map(|x|ScalarType::ByteSized(x))))
+    pub fn try_parse(txt: &str) -> Option<ScalarType> {
+        Unsigned::try_parse(txt)
+            .map(|x| ScalarType::Unsigned(x))
+            .or_else(|| {
+                Signed::try_parse(txt)
+                    .map(|x| ScalarType::Signed(x))
+                    .or_else(|| Float::try_parse(txt).map(|x| ScalarType::Float(x)))
+                    .or_else(|| ByteSize::try_parse(txt).map(|x| ScalarType::ByteSized(x)))
+            })
     }
 }

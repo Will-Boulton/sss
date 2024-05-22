@@ -10,5 +10,5 @@ pub struct MessageDeclarationSyntax {
 #[derive(Debug)]
 pub enum MemberDeclaration {
     Field(FieldDeclaration),
-    Padding(usize)
+    Padding(usize),
 }

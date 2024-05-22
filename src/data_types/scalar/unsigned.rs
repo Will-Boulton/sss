@@ -1,4 +1,4 @@
-use crate::data_types::{FieldType};
+use crate::data_types::FieldType;
 use Unsigned::*;
 #[derive(Debug)]
 pub enum Unsigned {
@@ -11,23 +11,22 @@ pub enum Unsigned {
 impl FieldType for Unsigned {
     fn size_bytes(&self) -> usize {
         return match self {
-           U8 => 1,
-           U16 => 2,
-           U32 => 4,
-           U64 => 8,
+            U8 => 1,
+            U16 => 2,
+            U32 => 4,
+            U64 => 8,
         };
     }
 }
 
 impl Unsigned {
-    pub fn try_parse(txt: &str) -> Option<Unsigned>
-    {
+    pub fn try_parse(txt: &str) -> Option<Unsigned> {
         return match txt {
             "u8" => Some(U8),
             "u16" => Some(U16),
             "u32" => Some(U32),
             "u64" => Some(U64),
-            _ => None
-        }
+            _ => None,
+        };
     }
 }

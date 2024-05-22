@@ -1,7 +1,6 @@
 use crate::source::{Point, Range};
 use crate::token;
 pub use token::{Token, TokenType};
-use crate::parser::ParseError;
 
 mod token;
 
@@ -124,7 +123,7 @@ impl<'a> Lexer<'a> {
                     Err(_) => Some(token!(
                         Invalid,
                         Range::new(start_loc, self.current_location)
-                    ))
+                    )),
                 };
             }
             char if KEY_CHARS.contains(&char) => {

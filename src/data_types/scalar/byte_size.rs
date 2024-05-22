@@ -19,7 +19,7 @@ impl ByteSize {
             "byte" => Some(Byte),
             "char" => Some(Char),
             "ascii" => Some(Ascii),
-            _ => None
-        }
+            _ => None,
+        };
     }
 }

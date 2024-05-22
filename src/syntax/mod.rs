@@ -1,6 +1,6 @@
 pub use enum_syntax::EnumDeclarationSyntax;
 pub use field_syntax::FieldDeclaration;
-pub use message_syntax::{MessageDeclarationSyntax,MemberDeclaration};
+pub use message_syntax::{MemberDeclaration, MessageDeclarationSyntax};
 
 mod enum_syntax;
 mod field_syntax;

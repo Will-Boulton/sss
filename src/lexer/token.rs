@@ -12,7 +12,7 @@ pub enum TokenType {
     CloseBrace,
     OpenBracket,
     CloseBracket,
-    Invalid
+    Invalid,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

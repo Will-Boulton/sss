@@ -1,9 +1,12 @@
-use std::cmp::PartialEq;
-use crate::data_types::{FieldType_, ScalarType, ArrayLike};
 use crate::data_types::scalar::ByteSize;
+use crate::data_types::{ArrayLike, FieldType_, ScalarType};
 use crate::lexer::{Token, TokenType};
 use crate::parser::ParseError::UnexpectedToken;
-use crate::syntax::{DeclarationSyntax, MessageDeclarationSyntax, MemberDeclaration, ProtocolDeclarationSyntax, SyntaxUnit, FieldDeclaration};
+use crate::syntax::{
+    DeclarationSyntax, FieldDeclaration, MemberDeclaration, MessageDeclarationSyntax,
+    ProtocolDeclarationSyntax, SyntaxUnit,
+};
+use std::cmp::PartialEq;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParseError {
@@ -13,7 +16,7 @@ pub enum ParseError {
     MissingIdentifier,
     ExpectedProtocolDeclaration,
     InvalidNumberFormat,
-    UnknownType
+    UnknownType,
 }
 
 pub struct Parser<'a, T: Iterator<Item = Token> + Clone> {
@@ -72,13 +75,15 @@ where
     }
 
     fn parse_message_declaration(&mut self) -> Result<MessageDeclarationSyntax, ParseError> {
-        let name = self.get_next_token_if(|t| match t.get_type() {
-            TokenType::Identifier(id) => Some(id.clone()),
-            _ => None
-        }).map_err(|t|match t {
-            Some(t) => UnexpectedToken(t.clone(), None),
-            None => ParseError::ExpectedAToken
-        })?;
+        let name = self
+            .get_next_token_if(|t| match t.get_type() {
+                TokenType::Identifier(id) => Some(id.clone()),
+                _ => None,
+            })
+            .map_err(|t| match t {
+                Some(t) => UnexpectedToken(t.clone(), None),
+                None => ParseError::ExpectedAToken,
+            })?;
 
         self.assert_next_token_matches(TokenType::OpenBracket)?;
         let id = self.parse_number()?;
@@ -86,18 +91,18 @@ where
         self.assert_next_token_matches(TokenType::CloseBracket)?;
         self.assert_next_token_matches(TokenType::OpenBrace)?;
 
-        let mut members : Vec<MemberDeclaration> = vec![];
+        let mut members: Vec<MemberDeclaration> = vec![];
         while let Some(member) = self.parse_member()? {
             members.push(member);
-            if let Some(t) = self.tokens.clone().next()  {
+            if let Some(t) = self.tokens.clone().next() {
                 if *t.get_type() == TokenType::CloseBrace {
-                    break
+                    break;
                 }
             }
         }
         self.tokens.next();
 
-        return Ok(MessageDeclarationSyntax{ name, id, members })
+        return Ok(MessageDeclarationSyntax { name, id, members });
     }
 
     fn parse_number(&mut self) -> Result<usize, ParseError> {
@@ -105,8 +110,8 @@ where
             None => Err(ParseError::ExpectedAToken),
             Some(t) => match t.get_type() {
                 TokenType::IntegerLiteral(int) => Ok(*int),
-                _ => Err(UnexpectedToken(t.clone(),None))
-            }
+                _ => Err(UnexpectedToken(t.clone(), None)),
+            },
         }
     }
 
@@ -114,75 +119,93 @@ where
         match self.tokens.next() {
             None => Ok(None),
             Some(t) => match t.get_type() {
-                TokenType::Identifier(type_name) => match self.try_parse_field(type_name.as_str())? {
-                    None => Ok(None),
-                    Some(f) => Ok(Some(MemberDeclaration::Field(f)))
-                },
-                TokenType::IntegerLiteral(size,) => {
+                TokenType::Identifier(type_name) => {
+                    match self.try_parse_field(type_name.as_str())? {
+                        None => Ok(None),
+                        Some(f) => Ok(Some(MemberDeclaration::Field(f))),
+                    }
+                }
+                TokenType::IntegerLiteral(size) => {
                     // only padding can start with an integer literal it will always be followed by
                     // a semi colon
                     self.assert_next_token_matches(TokenType::SemiColon)?;
                     Ok(Some(MemberDeclaration::Padding(*size)))
                 }
                 TokenType::SemiColon => Ok(None),
-                _ => Err(UnexpectedToken(t.clone(),None))
-            }
+                _ => Err(UnexpectedToken(t.clone(), None)),
+            },
         }
     }
 
-    fn try_parse_field(&mut self, identifier: &str) -> Result<Option<FieldDeclaration>, ParseError> {
-        let scalar_type : ScalarType =  match ScalarType::try_parse(identifier) {
+    fn try_parse_field(
+        &mut self,
+        identifier: &str,
+    ) -> Result<Option<FieldDeclaration>, ParseError> {
+        let scalar_type: ScalarType = match ScalarType::try_parse(identifier) {
             None => None,
-            Some(scalarType) => Some(scalarType)
-        }.ok_or(ParseError::UnknownType)?;
+            Some(scalarType) => Some(scalarType),
+        }
+        .ok_or(ParseError::UnknownType)?;
 
-
-        let field_type : FieldType_ = match self.tokens.next() {
+        let field_type: FieldType_ = match self.tokens.next() {
             None => Err(ParseError::ExpectedAToken),
             Some(tok) => match tok.get_type() {
                 TokenType::OpenBracket => {
                     let r = Ok(FieldType_::Vector(self.try_parse_vector_type(scalar_type)?));
                     self.assert_next_token_matches(TokenType::Colon)?;
                     r
-                },
+                }
                 TokenType::Colon => Ok(FieldType_::Scalar(scalar_type)),
-                _ => Err(UnexpectedToken(tok.clone(), None))
-            }
+                _ => Err(UnexpectedToken(tok.clone(), None)),
+            },
         }?;
 
-        let name = self.get_identifier()?.ok_or_else(||ParseError::ExpectedAToken)?;
+        let name = self
+            .get_identifier()?
+            .ok_or_else(|| ParseError::ExpectedAToken)?;
 
         self.assert_next_token_matches(TokenType::SemiColon)?;
 
-        Ok(Some(FieldDeclaration{
+        Ok(Some(FieldDeclaration {
             name,
             field_type,
-            description: None
+            description: None,
         }))
     }
 
-
-    pub fn try_parse_vector_type(&mut self, scalar_type: ScalarType) -> Result<ArrayLike,ParseError>{
-        let size = self.get_next_token_if(|t| match t.get_type() {
-            TokenType::IntegerLiteral(size) if *size > 0 => Some(size.clone()),
-            TokenType::IntegerLiteral(_)  => None,
-            _ => None
-        }).map_err(|t|match t {
-            None => ParseError::ExpectedAToken,
-            Some(t) => UnexpectedToken(t.clone(), Some(String::from("Expected an non-zero integer size")))
-        })?.clone();
+    pub fn try_parse_vector_type(
+        &mut self,
+        scalar_type: ScalarType,
+    ) -> Result<ArrayLike, ParseError> {
+        let size = self
+            .get_next_token_if(|t| match t.get_type() {
+                TokenType::IntegerLiteral(size) if *size > 0 => Some(size.clone()),
+                TokenType::IntegerLiteral(_) => None,
+                _ => None,
+            })
+            .map_err(|t| match t {
+                None => ParseError::ExpectedAToken,
+                Some(t) => UnexpectedToken(
+                    t.clone(),
+                    Some(String::from("Expected an non-zero integer size")),
+                ),
+            })?
+            .clone();
 
         self.assert_next_token_matches(TokenType::CloseBracket)?;
 
         if let ScalarType::ByteSized(b) = scalar_type {
             return match b {
-                ByteSize::Byte => Ok(ArrayLike::Bytes {length: size}),
-                ByteSize::Char => Ok(ArrayLike::AsciiString {length: size}),
-                ByteSize::Ascii => Ok(ArrayLike::AsciiString {length: size})
-            }
+                ByteSize::Byte => Ok(ArrayLike::Bytes { length: size }),
+                ByteSize::Char => Ok(ArrayLike::AsciiString { length: size }),
+                ByteSize::Ascii => Ok(ArrayLike::AsciiString { length: size }),
+            };
         }
 
-        return Ok(ArrayLike::FixedArray {length: size, scalar: scalar_type})
+        return Ok(ArrayLike::FixedArray {
+            length: size,
+            scalar: scalar_type,
+        });
     }
 
     pub fn assert_next_token_matches(&mut self, tt: TokenType) -> Result<Token, ParseError> {
@@ -204,9 +227,9 @@ where
         match self.tokens.next() {
             None => Err(None),
             Some(token) => match token_matches(&token) {
-                None =>  Err(Some(token)),
-                Some(v) => Ok(v)
-            }
+                None => Err(Some(token)),
+                Some(v) => Ok(v),
+            },
         }
     }
 
@@ -287,30 +310,29 @@ where
     }
 }
 
-
 #[cfg(test)]
-mod test{
+mod test {
     use crate::lexer::tokenize;
     use crate::parser::Parser;
     use crate::syntax::DeclarationSyntax;
 
     #[test]
     fn test_parse_message() {
-        let mut tokens = tokenize("message foop [123] {\
+        let mut tokens = tokenize(
+            "message foop [123] {\
             12;\
             u32: skibbidy;\
             byte: pow;\
             ascii[10]: txt;\
         \
-        }");
+        }",
+        );
         let mut parser = Parser::new(&mut tokens);
 
         let dec = parser.parse_declaration();
 
-
         assert!(dec.ok().is_some())
     }
-
 
     macro_rules! assert_is_message {
         ($decl:expr, name: $name:ident, id: $id:literal  $(,$cond:expr)* ) => {
@@ -340,7 +362,8 @@ mod test{
 
     #[test]
     fn parse_syntax_unit() {
-        let mut tokens = tokenize("\
+        let mut tokens = tokenize(
+            "\
         protocol foobar.baz;\
         \
         \
@@ -357,7 +380,8 @@ mod test{
         \
         }\
         \
-        message baz [3] {12;}");
+        message baz [3] {12;}",
+        );
 
         let mut parser = Parser::new(&mut tokens);
 
@@ -367,9 +391,9 @@ mod test{
 
         let su = dec.unwrap().unwrap();
 
-        assert_eq!(2,su.protocol.components.len());
+        assert_eq!(2, su.protocol.components.len());
 
-        assert_eq!(3,su.declarations.len());
+        assert_eq!(3, su.declarations.len());
 
         let d1 = &su.declarations[0];
         let d2 = &su.declarations[1];
@@ -378,6 +402,4 @@ mod test{
         assert_is_message!(d2, name: bar, id: 2, &bar.members.len() == &1);
         assert_is_message!(d3, name: baz, id: 3, &baz.members.len() == &1);
     }
-
-
 }

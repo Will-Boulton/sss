@@ -1,5 +1,5 @@
-use crate::data_types::FieldType;
 use crate::data_types::scalar::Float::*;
+use crate::data_types::FieldType;
 
 #[derive(Debug)]
 pub enum Float {
@@ -17,12 +17,11 @@ impl FieldType for Float {
 }
 
 impl Float {
-    pub fn try_parse(txt: &str) -> Option<Float>
-    {
+    pub fn try_parse(txt: &str) -> Option<Float> {
         return match txt {
             "f32" => Some(F32),
             "f64" => Some(F64),
-            _ => None
-        }
+            _ => None,
+        };
     }
 }
